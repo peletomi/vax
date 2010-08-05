@@ -23,6 +23,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.pcosta.vax.annotation.Value;
 import org.pcosta.vax.annotation.ValueJavaAdapter;
@@ -75,16 +77,17 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
         final ExtractorFrontEnd<Extracted> frontEnd = this.frontEndFactory.create();
         frontEnd.init();
 
-        final List<ParsingContext> parsingContext = new ArrayList<ParsingContext>();
-        parsingContext.add(new ParsingContext(instance));
-        for (final ParsingContext context : parsingContext) {
+        final Queue<ParsingContext> parsingContext = new ConcurrentLinkedQueue<ParsingContext>();
+        parsingContext.offer(new ParsingContext(instance));
+        while (!parsingContext.isEmpty()) {
+            final ParsingContext context = parsingContext.poll();
             for (final Field field : new IterableFields(context.getInstance())) {
                 this.handleMarshaling(exHandler, keyGenerator, adapters, context, parsingContext, frontEnd, field,
-                        this.getName(exHandler, field), this.getValue(exHandler, instance, field));
+                        this.getName(exHandler, field), this.getValue(exHandler, context.getInstance(), field));
             }
             for (final Method method : new IterableMethods(context.getInstance())) {
                 this.handleMarshaling(exHandler, keyGenerator, adapters, context, parsingContext, frontEnd, method,
-                        this.getName(exHandler, method), this.getValue(exHandler, instance, method));
+                        this.getName(exHandler, method), this.getValue(exHandler, context.getInstance(), method));
             }
         }
 
@@ -130,21 +133,26 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
 
     private void handleMarshaling(final ExceptionHandler exHandler, final ValueKeyGenerator keyGenerator,
             @SuppressWarnings("rawtypes") final Map<String, ValueAdapter> adapters,
-            final ParsingContext currentContext, final List<ParsingContext> parsingContext,
+            final ParsingContext currentContext, final Queue<ParsingContext> parsingContext,
             final ExtractorFrontEnd<Extracted> frontEnd, final AnnotatedElement element, final String name,
             final Object value) {
-        this.applyAdapters(exHandler, ParsingDirection.MARSHALING, adapters, element, value);
-        this.validate(element, value);
-        if (this.doCollectionRecurse(element, value)) {
-            this.addToParsingContext(exHandler, name, currentContext, parsingContext, value);
+        final Object adaptedValue = this.applyAdapters(exHandler, ParsingDirection.MARSHALING, adapters, element, value);
+        this.validate(element, adaptedValue);
+        if (this.doRecurse(element)) {
+            if (isCollection(adaptedValue)) {
+                this.addToParsingContext(exHandler, name, currentContext, parsingContext, adaptedValue);
+            } else {
+                parsingContext
+                .offer(new ParsingContext(this.merge(currentContext.getAncestorKeys(), name), adaptedValue));
+            }
         } else {
-            frontEnd.addValue(this.merge(currentContext.getAncestorKeys(), name), value);
+            frontEnd.addValue(this.merge(currentContext.getAncestorKeys(), name), adaptedValue);
         }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void addToParsingContext(final ExceptionHandler exHandler, final String name,
-            final ParsingContext currentContext, final List<ParsingContext> parsingContext, final Object value) {
+            final ParsingContext currentContext, final Queue<ParsingContext> parsingContext, final Object value) {
         Collection<Object> instances = null;
         if (value.getClass().isArray()) {
             instances = Arrays.asList(value);
@@ -157,7 +165,7 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
             int i = 0;
             for (final Object instance : instances) {
                 parsingContext
-                        .add(new ParsingContext(this.merge(currentContext.getAncestorKeys(), name), instance, true, i));
+                        .offer(new ParsingContext(this.merge(currentContext.getAncestorKeys(), name), instance, true, i));
                 ++i;
             }
         }
@@ -170,15 +178,23 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
     }
 
     /**
-     * If the value is a collection, and the recurse attribute is set, then the
-     * elements of the collection are extracted as well.
+     * Return whether the value is a collection, or an array.
      *
      * @return
      */
-    private boolean doCollectionRecurse(final AnnotatedElement element, final Object value) {
+    private boolean isCollection(final Object value) {
+        return value instanceof Collection || value.getClass().isArray();
+    }
+
+    /**
+     * Return whether the recurse attribute is set.
+     *
+     * @param element
+     * @return
+     */
+    private boolean doRecurse(final AnnotatedElement element) {
         final Value annotation = element.getAnnotation(Value.class);
-        return annotation != null && annotation.recurse()
-                && (value instanceof Collection || value.getClass().isArray());
+        return annotation != null && annotation.recurse();
     }
 
     private String getName(final ExceptionHandler exHandler, final Field field) {
@@ -249,7 +265,7 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
         final ValueJavaAdapter annotation = element.getAnnotation(ValueJavaAdapter.class);
         if (annotation != null) {
             adapterList = new ArrayList<ValueAdapter>(adapters.size());
-            for (final Class<? extends ValueAdapter<?, ?>> clazz : annotation.adapter()) {
+            for (final Class<? extends ValueAdapter<?, ?>> clazz : annotation.value()) {
                 if (adapters.containsKey(clazz.getName())) {
                     adapterList.add(adapters.get(clazz.getName()));
                 } else {

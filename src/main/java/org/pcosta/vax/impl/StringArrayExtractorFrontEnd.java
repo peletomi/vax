@@ -36,9 +36,11 @@ public class StringArrayExtractorFrontEnd implements ExtractorFrontEnd<Map<Strin
 
     private boolean skipBlanks = true;
 
+    private boolean qualified = false;
+
     @Override
     public void init() {
-        this.values = new HashMap<String[], String[]>();
+        values = new HashMap<String[], String[]>();
     }
 
     @Override
@@ -62,10 +64,10 @@ public class StringArrayExtractorFrontEnd implements ExtractorFrontEnd<Map<Strin
         } else {
             valueList.add(value.toString());
         }
-        if (this.skipBlanks) {
+        if (skipBlanks) {
             final List<String> filtered = new ArrayList<String>();
             for (final String string : valueList) {
-                if (!this.isBlank(string)) {
+                if (!isBlank(string)) {
                     filtered.add(string);
                 }
             }
@@ -73,14 +75,14 @@ public class StringArrayExtractorFrontEnd implements ExtractorFrontEnd<Map<Strin
             if (!valueList.isEmpty()) {
             }
         }
-        if ((this.skipBlanks && !valueList.isEmpty()) || !this.skipBlanks) {
-            this.values.put(key, valueList.toArray(new String[valueList.size()]));
+        if ((skipBlanks && !valueList.isEmpty()) || !skipBlanks) {
+            values.put(key, valueList.toArray(new String[valueList.size()]));
         }
     }
 
     @Override
     public boolean contains(final String[] key) {
-        return this.values.containsKey(Util.join(key, this.keySeparator));
+        return values.containsKey(Util.join(key, keySeparator));
     }
 
     @Override
@@ -89,15 +91,22 @@ public class StringArrayExtractorFrontEnd implements ExtractorFrontEnd<Map<Strin
 
     @Override
     public Map<String, String[]> getExtracted() {
-        final Map<String, String[]> result = new HashMap<String, String[]>(this.values.size());
-        for (final Entry<String[], String[]> entry : this.values.entrySet()) {
-            result.put(Util.join(entry.getKey(), this.keySeparator), entry.getValue());
+        final Map<String, String[]> result = new HashMap<String, String[]>(values.size());
+        for (final Entry<String[], String[]> entry : values.entrySet()) {
+            final String[] keys = entry.getKey();
+            String key;
+            if (qualified) {
+                key = Util.join(keys, keySeparator);
+            } else {
+                key = keys[keys.length - 1];
+            }
+            result.put(key, entry.getValue());
         }
         return result;
     }
 
     public String getKeySeparator() {
-        return this.keySeparator;
+        return keySeparator;
     }
 
     public void setKeySeparator(final String keySeparator) {
@@ -105,7 +114,7 @@ public class StringArrayExtractorFrontEnd implements ExtractorFrontEnd<Map<Strin
     }
 
     public boolean isSkipBlanks() {
-        return this.skipBlanks;
+        return skipBlanks;
     }
 
     public void setSkipBlanks(final boolean skipBlanks) {
@@ -114,5 +123,13 @@ public class StringArrayExtractorFrontEnd implements ExtractorFrontEnd<Map<Strin
 
     protected boolean isBlank(final String value) {
         return value == null || "".equals(value);
+    }
+
+    public boolean isQualified() {
+        return qualified;
+    }
+
+    public void setQualified(final boolean qualified) {
+        this.qualified = qualified;
     }
 }

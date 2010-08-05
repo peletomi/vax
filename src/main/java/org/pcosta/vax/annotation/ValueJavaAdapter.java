@@ -28,6 +28,6 @@ import org.pcosta.vax.ValueAdapter;
 @Retention(value = RetentionPolicy.RUNTIME)
 public @interface ValueJavaAdapter {
 
-    Class<? extends ValueAdapter<?, ?>>[] adapter();
+    Class<? extends ValueAdapter<?, ?>>[] value();
 
 }

@@ -18,8 +18,13 @@ import static org.junit.Assert.assertThat;
 
 import java.util.Map;
 
+import junit.framework.Assert;
+
 import org.junit.Before;
 import org.junit.Test;
+import org.pcosta.vax.testobject.Address;
+import org.pcosta.vax.testobject.CountryCode;
+import org.pcosta.vax.testobject.Customer;
 import org.pcosta.vax.testobject.Person;
 
 /**
@@ -37,34 +42,100 @@ public class StringArrayExtractorTest {
 
     private static final String LAST_NAME_KEY = "lastName";
 
+    private static final String CITY = "Miskolc";
+
+    private static final String CITY_KEY = "city";
+
+    private static final String STREET = "Kossuth u. 6";
+
+    private static final String STREET_KEY = "streetWithNumber";
+
+    private static final int ZIP = 12345;
+
+    private static final String ZIP_KEY = "zip";
+
+    private static final String COUNTRY_CODE = "hu";
+
+    private static final String COUNTRY_CODE_KEY = "countryCode";
+
     private final StringArrayExtractor extractor = new StringArrayExtractor();
 
     private Person person;
 
+    private Address address;
+
     @Before
     public void setUp() throws Exception {
-        this.person = new Person();
-        this.person.setFirstName(FIRST_NAME);
-        this.person.setLastName(LAST_NAME);
+        person = new Person();
+        person.setFirstName(FIRST_NAME);
+        person.setLastName(LAST_NAME);
+
+        address = new Address();
+        address.setCity(CITY);
+        address.setCountry(CountryCode.HU);
+        address.setStreet(STREET);
+        address.setZip(ZIP);
     }
 
     @Test
     public void testNull() throws Exception {
-        final Map<String, String[]> values = this.extractor.marshal(null);
+        final Map<String, String[]> values = extractor.marshal(null);
         assertThat(values.isEmpty(), is(true));
     }
 
     @Test
     public void testNotAnnotated() throws Exception {
-        final Map<String, String[]> values = this.extractor.marshal("");
+        final Map<String, String[]> values = extractor.marshal("");
         assertThat(values.isEmpty(), is(true));
     }
 
     @Test
     public void testMarshalPerson() throws Exception {
-        final Map<String, String[]> values = this.extractor.marshal(this.person);
+        final Map<String, String[]> values = extractor.marshal(person);
         assertThat(values.isEmpty(), is(false));
         assertThat(values, hasEntry(FIRST_NAME_KEY, new String[] { FIRST_NAME }));
         assertThat(values, hasEntry(LAST_NAME_KEY, new String[] { LAST_NAME }));
+    }
+
+    @Test
+    public void testOptional() throws Exception {
+        Assert.fail("TODO");
+    }
+
+    @Test
+    public void testOptionalRecurse() throws Exception {
+        Assert.fail("TODO");
+    }
+
+    @Test
+    public void testRecurseWithAdapters() throws Exception {
+        final Customer customer = new Customer();
+        customer.setPerson(person);
+        customer.setAddress(address);
+
+        final Map<String, String[]> values = extractor.marshal(customer);
+
+        assertThat(values.isEmpty(), is(false));
+        assertThat(values, hasEntry(FIRST_NAME_KEY, new String[] { FIRST_NAME }));
+        assertThat(values, hasEntry(LAST_NAME_KEY, new String[] { LAST_NAME }));
+        assertThat(values, hasEntry(STREET_KEY, new String[] { STREET }));
+        assertThat(values, hasEntry(CITY_KEY, new String[] { CITY }));
+        assertThat(values, hasEntry(ZIP_KEY, new String[] { Integer.toString(ZIP) }));
+        assertThat(values, hasEntry(COUNTRY_CODE_KEY, new String[] { COUNTRY_CODE }));
+    }
+
+    @Test
+    public void testMultipleAdapters() throws Exception {
+        Assert.fail("TODO");
+    }
+
+    @Test
+    public void testInjectedAdapters() throws Exception {
+        Assert.fail("TODO");
+    }
+
+    @Test
+    public void testRequiredMissing() throws Exception {
+        Assert.fail("TODO");
     }
 }
