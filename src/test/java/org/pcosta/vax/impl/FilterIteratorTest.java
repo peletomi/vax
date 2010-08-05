@@ -12,6 +12,8 @@
  */
 package org.pcosta.vax.impl;
 
+import static org.hamcrest.core.Is.is;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -20,7 +22,6 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 import org.pcosta.vax.testobject.Employee;
-
 /**
  *
  * @author Tamas.Eppel@gmail.com
@@ -31,13 +32,13 @@ public class FilterIteratorTest {
     @Test
     public void testNull() throws Exception {
         final FieldFilterIterator iterator = new FieldFilterIterator(new FieldIterator(null));
-        Assert.assertTrue(!iterator.hasNext());
+        Assert.assertThat(iterator.hasNext(), is(false));
     }
 
     @Test
     public void testNoAnnotations() throws Exception {
         final FieldFilterIterator iterator = new FieldFilterIterator(new FieldIterator(""));
-        Assert.assertTrue(!iterator.hasNext());
+        Assert.assertThat(iterator.hasNext(), is(false));
     }
 
     @Test
@@ -46,7 +47,7 @@ public class FilterIteratorTest {
         for (final Field field : new IterableFields(new Employee())) {
             fields.add(field);
         }
-        Assert.assertEquals(2, fields.size());
+        Assert.assertThat(fields.size(), is(2));
     }
 
     @Test
@@ -55,6 +56,6 @@ public class FilterIteratorTest {
         for (final Method field : new IterableMethods(new Employee())) {
             fields.add(field);
         }
-        Assert.assertEquals(3, fields.size());
+        Assert.assertThat(fields.size(), is(3));
     }
 }

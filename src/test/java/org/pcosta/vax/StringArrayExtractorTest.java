@@ -12,9 +12,12 @@
  */
 package org.pcosta.vax;
 
+import static org.hamcrest.collection.IsMapContaining.hasEntry;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
+
 import java.util.Map;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.pcosta.vax.testobject.Person;
@@ -28,7 +31,11 @@ public class StringArrayExtractorTest {
 
     private static final String FIRST_NAME = "John";
 
+    private static final String FIRST_NAME_KEY = "firstName";
+
     private static final String LAST_NAME = "Doe";
+
+    private static final String LAST_NAME_KEY = "lastName";
 
     private final StringArrayExtractor extractor = new StringArrayExtractor();
 
@@ -44,18 +51,20 @@ public class StringArrayExtractorTest {
     @Test
     public void testNull() throws Exception {
         final Map<String, String[]> values = this.extractor.marshal(null);
-        Assert.assertTrue(values.isEmpty());
+        assertThat(values.isEmpty(), is(true));
     }
 
     @Test
     public void testNotAnnotated() throws Exception {
         final Map<String, String[]> values = this.extractor.marshal("");
-        Assert.assertTrue(values.isEmpty());
+        assertThat(values.isEmpty(), is(true));
     }
 
     @Test
     public void testMarshalPerson() throws Exception {
         final Map<String, String[]> values = this.extractor.marshal(this.person);
-        Assert.assertTrue(!values.isEmpty());
+        assertThat(values.isEmpty(), is(false));
+        assertThat(values, hasEntry(FIRST_NAME_KEY, new String[] { FIRST_NAME }));
+        assertThat(values, hasEntry(LAST_NAME_KEY, new String[] { LAST_NAME }));
     }
 }
