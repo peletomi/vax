@@ -34,6 +34,8 @@ import org.pcosta.vax.impl.IterableFields;
 import org.pcosta.vax.impl.IterableMethods;
 import org.pcosta.vax.impl.ParsingContext;
 import org.pcosta.vax.impl.ParsingDirection;
+import org.pcosta.vax.impl.exception.AdapterException;
+import org.pcosta.vax.impl.util.BeanUtils;
 
 // TODO ordering of parameters
 /**
@@ -44,14 +46,6 @@ import org.pcosta.vax.impl.ParsingDirection;
 public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEndFactory<Extracted>> {
 
     private static final String UNEXP_TYPE_TEMPL = "expected collection or array but was [%s]";
-
-    private static final String NOT_GETTER_TEMPL = "Value annotation must be on a field, getter or a setter method, annotatied [%s]";
-
-    private static final String GET = "get";
-
-    private static final String IS = "is";
-
-    private static final String SET = "set";
 
     private final Factory frontEndFactory;
 
@@ -67,6 +61,14 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
     @SuppressWarnings("rawtypes")
     private Map<String, ValueAdapter> valueAdapters = Collections.emptyMap();
 
+    /**
+     *
+     * @param instance
+     * @throws {@link IllegalArgumentException}
+     * @throws {@link VaxException}
+     * @throws {@link AdapterException}
+     * @return
+     */
     public Extracted marshal(final Object instance) {
 
         @SuppressWarnings("rawtypes")
@@ -82,12 +84,12 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
         while (!parsingContext.isEmpty()) {
             final ParsingContext context = parsingContext.poll();
             for (final Field field : new IterableFields(context.getInstance())) {
-                this.handleMarshaling(exHandler, keyGenerator, adapters, context, parsingContext, frontEnd, field,
-                        this.getName(exHandler, field), this.getValue(exHandler, context.getInstance(), field));
+                this.handleMarshaling(keyGenerator, adapters, context, parsingContext, frontEnd, field,
+                        this.getName(field), this.getValue(context.getInstance(), field));
             }
             for (final Method method : new IterableMethods(context.getInstance())) {
-                this.handleMarshaling(exHandler, keyGenerator, adapters, context, parsingContext, frontEnd, method,
-                        this.getName(exHandler, method), this.getValue(exHandler, context.getInstance(), method));
+                this.handleMarshaling(keyGenerator, adapters, context, parsingContext, frontEnd, method,
+                        this.getName(method), this.getValue(context.getInstance(), method));
             }
         }
 
@@ -131,16 +133,16 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
         }
     }
 
-    private void handleMarshaling(final ExceptionHandler exHandler, final ValueKeyGenerator keyGenerator,
+    private void handleMarshaling(final ValueKeyGenerator keyGenerator,
             @SuppressWarnings("rawtypes") final Map<String, ValueAdapter> adapters,
             final ParsingContext currentContext, final Queue<ParsingContext> parsingContext,
             final ExtractorFrontEnd<Extracted> frontEnd, final AnnotatedElement element, final String name,
             final Object value) {
-        final Object adaptedValue = this.applyAdapters(exHandler, ParsingDirection.MARSHALING, adapters, element, value);
+        final Object adaptedValue = this.applyAdapters(ParsingDirection.MARSHALING, adapters, element, value);
         this.validate(element, adaptedValue);
         if (this.doRecurse(element)) {
             if (isCollection(adaptedValue)) {
-                this.addToParsingContext(exHandler, name, currentContext, parsingContext, adaptedValue);
+                this.addToParsingContext(name, currentContext, parsingContext, adaptedValue);
             } else {
                 parsingContext
                 .offer(new ParsingContext(this.merge(currentContext.getAncestorKeys(), name), adaptedValue));
@@ -151,7 +153,7 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private void addToParsingContext(final ExceptionHandler exHandler, final String name,
+    private void addToParsingContext(final String name,
             final ParsingContext currentContext, final Queue<ParsingContext> parsingContext, final Object value) {
         Collection<Object> instances = null;
         if (value.getClass().isArray()) {
@@ -159,7 +161,7 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
         } else if (value instanceof Collection) {
             instances = (Collection) value;
         } else {
-            exHandler.handleUnexpectedType(String.format(UNEXP_TYPE_TEMPL, value.getClass().getName()));
+            throw new IllegalArgumentException(String.format(UNEXP_TYPE_TEMPL, value.getClass().getName()));
         }
         if (instances != null) {
             int i = 0;
@@ -197,12 +199,12 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
         return annotation != null && annotation.recurse();
     }
 
-    private String getName(final ExceptionHandler exHandler, final Field field) {
+    private String getName(final Field field) {
         return this.getName(field.getName(), field);
     }
 
-    private String getName(final ExceptionHandler exHandler, final Method method) {
-        return this.getName(this.getMethodName(exHandler, method), method);
+    private String getName(final Method method) {
+        return this.getName(BeanUtils.getMethodName(method), method);
     }
 
     /**
@@ -228,10 +230,10 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private Object applyAdapters(final ExceptionHandler exHandler, final ParsingDirection direction,
+    private Object applyAdapters(final ParsingDirection direction,
             final Map<String, ValueAdapter> adapters, final AnnotatedElement element, final Object value) {
         Object result = value;
-        final List<ValueAdapter> adapterList = this.createAdapterList(exHandler, adapters, element);
+        final List<ValueAdapter> adapterList = this.createAdapterList(adapters, element);
         // reverse list for unmarshaling
         if (direction == ParsingDirection.UNMARSHALING) {
             Collections.reverse(adapterList);
@@ -244,7 +246,7 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
                     result = adapter.unmarshal(result);
                 }
             } catch (final Exception e) {
-                exHandler.handleAdapterException(e);
+                throw new AdapterException(e);
             }
         }
         return result;
@@ -253,13 +255,12 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
     /**
      * Gathers and constructs the list of adapters.
      *
-     * @param exHandler
      * @param adapters
      * @param element
      * @return
      */
     @SuppressWarnings("rawtypes")
-    private List<ValueAdapter> createAdapterList(final ExceptionHandler exHandler,
+    private List<ValueAdapter> createAdapterList(
             final Map<String, ValueAdapter> adapters, final AnnotatedElement element) {
         List<ValueAdapter> adapterList = Collections.emptyList();
         final ValueJavaAdapter annotation = element.getAnnotation(ValueJavaAdapter.class);
@@ -273,9 +274,9 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
                         final ValueAdapter adapter = clazz.newInstance();
                         adapterList.add(adapter);
                     } catch (final InstantiationException e) {
-                        exHandler.handleAdapterInstantiationException(e);
+                        throw new AdapterException(e);
                     } catch (final IllegalAccessException e) {
-                        exHandler.handleAdapterInstantiationException(e);
+                        throw new AdapterException(e);
                     }
                 }
             }
@@ -283,58 +284,47 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
         return adapterList;
     }
 
-    private Object getValue(final ExceptionHandler exHandler, final Object instance, final Field field) {
+    private Object getValue(final Object instance, final Field field) {
         Object result = null;
         final boolean accessible = field.isAccessible();
         field.setAccessible(true);
         try {
             result = field.get(instance);
-        } catch (final IllegalArgumentException e) {
-            exHandler.handleFieldAccessException(e, field.getName());
-        } catch (final IllegalAccessException e) {
-            exHandler.handleFieldAccessException(e, field.getName());
+        }
+        catch (final IllegalAccessException e) {
+            throw new IllegalArgumentException(e);
         }
         field.setAccessible(accessible);
         return result;
     }
 
-    private Object getValue(final ExceptionHandler exHandler, final Object instance, final Method method) {
+    private Object getValue(final Object instance, final Method method) {
         Object result = null;
         try {
-            final Method getter = this.getGetterMethod(exHandler, method);
+            final Method getter = this.getGetterMethod(method);
             result = getter.invoke(instance);
-        } catch (final IllegalArgumentException e) {
-            exHandler.handleFieldAccessException(e, method.getName());
         } catch (final IllegalAccessException e) {
-            exHandler.handleFieldAccessException(e, method.getName());
+            throw new IllegalArgumentException(e);
         } catch (final InvocationTargetException e) {
-            exHandler.handleFieldAccessException(e, method.getName());
+            throw new IllegalArgumentException(e);
         }
         return result;
     }
 
-    private Method getGetterMethod(final ExceptionHandler exHandler, final Method method) {
-        // TODO
+    private Method getGetterMethod(final Method method) {
+        final Method result = BeanUtils.getGetter(method);
+        if (result == null) {
+            throw new IllegalStateException(String.format("coul not find getter for method [%s]", method.getName()));
+        }
         return method;
     }
 
-    private Method getSetterMethod(final ExceptionHandler exHandler, final Method method) {
-        // TODO
+    private Method getSetterMethod(final Method method) {
+        final Method result = BeanUtils.getSetter(method);
+        if (result == null) {
+            throw new IllegalStateException(String.format("coul not find setter for method [%s]", method.getName()));
+        }
         return method;
     }
 
-    private String getMethodName(final ExceptionHandler exHandler, final Method method) {
-        String result = null;
-        if (method.getName().startsWith(GET) || method.getName().startsWith(SET)) {
-            result = method.getName().substring(3);
-        } else if (method.getName().startsWith(IS)) {
-            result = method.getName().substring(2);
-        } else {
-            exHandler.handleAnnotationOnIllegalField(String.format(NOT_GETTER_TEMPL, method.getName()));
-        }
-        if (result != null) {
-            result = result.substring(0, 1).toLowerCase() + result.substring(1);
-        }
-        return result;
-    }
 }

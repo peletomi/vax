@@ -21,16 +21,4 @@ public interface ExceptionHandler {
 
     void handleKeyConflict(final Object key);
 
-    void handleRequiredMissing(final Object key);
-
-    void handleUnexpectedType(final String message);
-
-    void handleFieldAccessException(final Exception e, final String fieldName);
-
-    void handleAdapterException(final Exception e);
-
-    void handleAdapterInstantiationException(final Exception e);
-
-    void handleAnnotationOnIllegalField(String message);
-
 }

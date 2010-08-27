@@ -12,8 +12,15 @@
  */
 package org.pcosta.vax.impl;
 
+import static com.google.common.base.Predicates.and;
+
 import java.lang.reflect.Method;
 import java.util.Iterator;
+
+import org.pcosta.vax.impl.util.BeanUtils;
+
+import com.google.common.base.Predicates;
+import com.google.common.collect.Iterators;
 
 /**
  *
@@ -31,7 +38,8 @@ public class IterableMethods implements Iterable<Method> {
 
     @Override
     public Iterator<Method> iterator() {
-        return new MethodFilterIterator(new MethodIterator(this.instance));
+        return Iterators.filter(new MethodIterator(instance),
+                and(BeanUtils.IS_VALUE, Predicates.or(BeanUtils.IS_GETTER, BeanUtils.IS_SETTER)));
     }
 
 }

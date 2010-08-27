@@ -23,6 +23,8 @@ import java.util.Map.Entry;
 import org.pcosta.vax.ExceptionHandler;
 import org.pcosta.vax.ExtractorFrontEnd;
 
+import com.google.common.base.Joiner;
+
 /**
  *
  * @author Tamas.Eppel@gmail.com
@@ -82,7 +84,7 @@ public class StringArrayExtractorFrontEnd implements ExtractorFrontEnd<Map<Strin
 
     @Override
     public boolean contains(final String[] key) {
-        return values.containsKey(Util.join(key, keySeparator));
+        return values.containsKey(Joiner.on(keySeparator).join(key, keySeparator));
     }
 
     @Override
@@ -96,7 +98,7 @@ public class StringArrayExtractorFrontEnd implements ExtractorFrontEnd<Map<Strin
             final String[] keys = entry.getKey();
             String key;
             if (qualified) {
-                key = Util.join(keys, keySeparator);
+                key = Joiner.on(keySeparator).join(keys, keySeparator);
             } else {
                 key = keys[keys.length - 1];
             }

@@ -30,34 +30,4 @@ public class DefaultExceptionHandler implements ExceptionHandler {
         LOG.warn("key [{}] is already present", key);
     }
 
-    @Override
-    public void handleRequiredMissing(final Object key) {
-        throw new IllegalArgumentException(String.format("value [%s] is not set but is required", key));
-    }
-
-    @Override
-    public void handleUnexpectedType(final String message) {
-        throw new IllegalArgumentException(message);
-    }
-
-    @Override
-    public void handleFieldAccessException(final Exception e, final String fieldName) {
-        throw new IllegalStateException(String.format("could not get value from field [%s]", fieldName), e);
-    }
-
-    @Override
-    public void handleAdapterException(final Exception e) {
-        throw new IllegalArgumentException(e);
-    }
-
-    @Override
-    public void handleAdapterInstantiationException(final Exception e) {
-        throw new IllegalArgumentException(e);
-    }
-
-    @Override
-    public void handleAnnotationOnIllegalField(final String message) {
-        throw new IllegalArgumentException(message);
-    }
-
 }

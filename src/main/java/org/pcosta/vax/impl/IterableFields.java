@@ -15,6 +15,10 @@ package org.pcosta.vax.impl;
 import java.lang.reflect.Field;
 import java.util.Iterator;
 
+import org.pcosta.vax.impl.util.BeanUtils;
+
+import com.google.common.collect.Iterators;
+
 /**
  *
  * @author Tamas.Eppel@gmail.com
@@ -31,7 +35,8 @@ public class IterableFields implements Iterable<Field> {
 
     @Override
     public Iterator<Field> iterator() {
-        return new FieldFilterIterator(new FieldIterator(this.instance));
+
+        return Iterators.filter(new FieldIterator(instance), BeanUtils.IS_VALUE);
     }
 
 }
