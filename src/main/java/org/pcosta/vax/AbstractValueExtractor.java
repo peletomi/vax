@@ -35,7 +35,10 @@ import org.pcosta.vax.impl.IterableMethods;
 import org.pcosta.vax.impl.ParsingContext;
 import org.pcosta.vax.impl.ParsingDirection;
 import org.pcosta.vax.impl.exception.AdapterException;
+import org.pcosta.vax.impl.exception.ValidationException;
 import org.pcosta.vax.impl.util.BeanUtils;
+
+import com.google.common.collect.ImmutableList;
 
 // TODO ordering of parameters
 /**
@@ -73,24 +76,30 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
 
         @SuppressWarnings("rawtypes")
         final Map<String, ValueAdapter> adapters = this.getValueAdapterMap();
-        final ExceptionHandler exHandler = this.getExceptionHandler();
         final ValueKeyGenerator keyGenerator = this.getValueKeyGenerator();
 
         final ExtractorFrontEnd<Extracted> frontEnd = this.frontEndFactory.create();
         frontEnd.init();
 
+        final List<String> violations = new ArrayList<String>();
         final Queue<ParsingContext> parsingContext = new ConcurrentLinkedQueue<ParsingContext>();
         parsingContext.offer(new ParsingContext(instance));
         while (!parsingContext.isEmpty()) {
             final ParsingContext context = parsingContext.poll();
             for (final Field field : new IterableFields(context.getInstance())) {
-                this.handleMarshaling(keyGenerator, adapters, context, parsingContext, frontEnd, field,
-                        this.getName(field), this.getValue(context.getInstance(), field));
+                violations.addAll(this.handleMarshaling(keyGenerator, adapters, context, parsingContext, frontEnd, field,
+                        this.getName(field), this.getValue(context.getInstance(), field)));
             }
             for (final Method method : new IterableMethods(context.getInstance())) {
-                this.handleMarshaling(keyGenerator, adapters, context, parsingContext, frontEnd, method,
-                        this.getName(method), this.getValue(context.getInstance(), method));
+                violations.addAll(this.handleMarshaling(keyGenerator, adapters, context, parsingContext, frontEnd, method,
+                        this.getName(method), this.getValue(context.getInstance(), method)));
             }
+        }
+
+        if (!violations.isEmpty()) {
+            final ValidationException e = new ValidationException();
+            e.setViolations(violations);
+            throw e;
         }
 
         return frontEnd.getExtracted();
@@ -133,23 +142,29 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
         }
     }
 
-    private void handleMarshaling(final ValueKeyGenerator keyGenerator,
+    private final List<String> handleMarshaling(final ValueKeyGenerator keyGenerator,
             @SuppressWarnings("rawtypes") final Map<String, ValueAdapter> adapters,
             final ParsingContext currentContext, final Queue<ParsingContext> parsingContext,
             final ExtractorFrontEnd<Extracted> frontEnd, final AnnotatedElement element, final String name,
             final Object value) {
         final Object adaptedValue = this.applyAdapters(ParsingDirection.MARSHALING, adapters, element, value);
-        this.validate(element, adaptedValue);
-        if (this.doRecurse(element)) {
-            if (isCollection(adaptedValue)) {
-                this.addToParsingContext(name, currentContext, parsingContext, adaptedValue);
+
+        final List<String> violations = this.validate(currentContext, name, element, adaptedValue);
+
+        if (violations.isEmpty()) {
+            if (this.doRecurse(element)) {
+                if (isCollection(adaptedValue)) {
+                    this.addToParsingContext(name, currentContext, parsingContext, adaptedValue);
+                } else {
+                    parsingContext
+                    .offer(new ParsingContext(this.merge(currentContext.getAncestorKeys(), name), adaptedValue));
+                }
             } else {
-                parsingContext
-                .offer(new ParsingContext(this.merge(currentContext.getAncestorKeys(), name), adaptedValue));
+                frontEnd.addValue(this.merge(currentContext.getAncestorKeys(), name), adaptedValue);
             }
-        } else {
-            frontEnd.addValue(this.merge(currentContext.getAncestorKeys(), name), adaptedValue);
         }
+
+        return violations;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -224,9 +239,16 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
         return name;
     }
 
-    private void validate(final AnnotatedElement element, final Object value) {
-        // TODO Auto-generated method stub
-
+    private List<String> validate(final ParsingContext parsingContext, final String name,
+            final AnnotatedElement element, final Object value) {
+        List<String> result = Collections.emptyList();
+        final Value annotation = element.getAnnotation(Value.class);
+        if (annotation.required() && (value == null || "".equals(value.toString()))) {
+            result = ImmutableList.copyOf(
+                      new String[] {String.format("value [%s] required but not set in class [%s]",
+                              name, parsingContext.getInstance().getClass().getName()) });
+        }
+        return result;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})

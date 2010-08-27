@@ -9,11 +9,14 @@ public class Person {
     private String lastName;
 
     @Value(required = false)
+    private String nickName;
+
+    @Value
     private Integer age;
 
     @Value
     public String getFirstName() {
-        return this.firstName;
+        return firstName;
     }
 
     public void setFirstName(final String firstName) {
@@ -22,15 +25,23 @@ public class Person {
 
     @Value
     public String getLastName() {
-        return this.lastName;
+        return lastName;
     }
 
     public void setLastName(final String lastName) {
         this.lastName = lastName;
     }
 
+    public String getNickName() {
+        return nickName;
+    }
+
+    public void setNickName(final String nickName) {
+        this.nickName = nickName;
+    }
+
     public Integer getAge() {
-        return this.age;
+        return age;
     }
 
     public void setAge(final Integer age) {
@@ -41,9 +52,9 @@ public class Person {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((this.age == null) ? 0 : this.age.hashCode());
-        result = prime * result + ((this.firstName == null) ? 0 : this.firstName.hashCode());
-        result = prime * result + ((this.lastName == null) ? 0 : this.lastName.hashCode());
+        result = prime * result + ((age == null) ? 0 : age.hashCode());
+        result = prime * result + ((firstName == null) ? 0 : firstName.hashCode());
+        result = prime * result + ((lastName == null) ? 0 : lastName.hashCode());
         return result;
     }
 
@@ -59,25 +70,25 @@ public class Person {
             return false;
         }
         final Person other = (Person) obj;
-        if (this.age == null) {
+        if (age == null) {
             if (other.age != null) {
                 return false;
             }
-        } else if (!this.age.equals(other.age)) {
+        } else if (!age.equals(other.age)) {
             return false;
         }
-        if (this.firstName == null) {
+        if (firstName == null) {
             if (other.firstName != null) {
                 return false;
             }
-        } else if (!this.firstName.equals(other.firstName)) {
+        } else if (!firstName.equals(other.firstName)) {
             return false;
         }
-        if (this.lastName == null) {
+        if (lastName == null) {
             if (other.lastName != null) {
                 return false;
             }
-        } else if (!this.lastName.equals(other.lastName)) {
+        } else if (!lastName.equals(other.lastName)) {
             return false;
         }
         return true;

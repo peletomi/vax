@@ -22,6 +22,7 @@ import junit.framework.Assert;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.pcosta.vax.impl.exception.ValidationException;
 import org.pcosta.vax.testobject.Address;
 import org.pcosta.vax.testobject.CountryCode;
 import org.pcosta.vax.testobject.Customer;
@@ -58,6 +59,14 @@ public class StringArrayExtractorTest {
 
     private static final String COUNTRY_CODE_KEY = "countryCode";
 
+    private static final Integer AGE = 28;
+
+    private static final String AGE_KEY = "age";
+
+    private static final String NICK_NAME = "johnny";
+
+    private static final String NICK_NAME_KEY = "nickName";
+
     private final StringArrayExtractor extractor = new StringArrayExtractor();
 
     private Person person;
@@ -69,6 +78,7 @@ public class StringArrayExtractorTest {
         person = new Person();
         person.setFirstName(FIRST_NAME);
         person.setLastName(LAST_NAME);
+        person.setAge(AGE);
 
         address = new Address();
         address.setCity(CITY);
@@ -95,11 +105,18 @@ public class StringArrayExtractorTest {
         assertThat(values.isEmpty(), is(false));
         assertThat(values, hasEntry(FIRST_NAME_KEY, new String[] { FIRST_NAME }));
         assertThat(values, hasEntry(LAST_NAME_KEY, new String[] { LAST_NAME }));
+        assertThat(values, hasEntry(AGE_KEY, new String[] { AGE.toString() }));
     }
 
     @Test
     public void testOptional() throws Exception {
-        Assert.fail("TODO");
+        person.setNickName(NICK_NAME);
+        final Map<String, String[]> values = extractor.marshal(person);
+        assertThat(values.isEmpty(), is(false));
+        assertThat(values, hasEntry(FIRST_NAME_KEY, new String[] { FIRST_NAME }));
+        assertThat(values, hasEntry(LAST_NAME_KEY, new String[] { LAST_NAME }));
+        assertThat(values, hasEntry(AGE_KEY, new String[] { AGE.toString() }));
+        assertThat(values, hasEntry(NICK_NAME_KEY, new String[] { NICK_NAME }));
     }
 
     @Test
@@ -136,6 +153,15 @@ public class StringArrayExtractorTest {
 
     @Test
     public void testRequiredMissing() throws Exception {
-        Assert.fail("TODO");
+        person.setAge(null);
+        person.setLastName(null);
+
+        try {
+            extractor.marshal(person);
+        } catch (final ValidationException e) {
+            assertThat(e.getViolations().size(), is(2));
+            return;
+        }
+        Assert.fail("expecting exception");
     }
 }
