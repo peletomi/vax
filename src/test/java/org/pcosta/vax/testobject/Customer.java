@@ -10,16 +10,16 @@ public class Customer {
 
     @Value(recurse = true)
     public Person getPerson() {
-        return this.person;
+        return person;
     }
 
     public void setPerson(final Person person) {
         this.person = person;
     }
 
-    @Value(recurse = true)
+    @Value(recurse = true, required = false)
     public Address getAddress() {
-        return this.address;
+        return address;
     }
 
     public void setAddress(final Address address) {
@@ -30,8 +30,8 @@ public class Customer {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((this.address == null) ? 0 : this.address.hashCode());
-        result = prime * result + ((this.person == null) ? 0 : this.person.hashCode());
+        result = prime * result + ((address == null) ? 0 : address.hashCode());
+        result = prime * result + ((person == null) ? 0 : person.hashCode());
         return result;
     }
 
@@ -47,18 +47,18 @@ public class Customer {
             return false;
         }
         final Customer other = (Customer) obj;
-        if (this.address == null) {
+        if (address == null) {
             if (other.address != null) {
                 return false;
             }
-        } else if (!this.address.equals(other.address)) {
+        } else if (!address.equals(other.address)) {
             return false;
         }
-        if (this.person == null) {
+        if (person == null) {
             if (other.person != null) {
                 return false;
             }
-        } else if (!this.person.equals(other.person)) {
+        } else if (!person.equals(other.person)) {
             return false;
         }
         return true;

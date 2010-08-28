@@ -200,7 +200,7 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
      * @return
      */
     private boolean isCollection(final Object value) {
-        return value instanceof Collection || value.getClass().isArray();
+        return value != null && (value instanceof Collection || value.getClass().isArray());
     }
 
     /**

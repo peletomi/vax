@@ -12,9 +12,9 @@
  */
 package org.pcosta.vax;
 
-import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
+import static org.pcosta.vax.impl.util.MapUtil.assertMapEquals;
 
 import java.util.Map;
 
@@ -102,26 +102,26 @@ public class StringArrayExtractorTest {
     @Test
     public void testMarshalPerson() throws Exception {
         final Map<String, String[]> values = extractor.marshal(person);
-        assertThat(values.isEmpty(), is(false));
-        assertThat(values, hasEntry(FIRST_NAME_KEY, new String[] { FIRST_NAME }));
-        assertThat(values, hasEntry(LAST_NAME_KEY, new String[] { LAST_NAME }));
-        assertThat(values, hasEntry(AGE_KEY, new String[] { AGE.toString() }));
+        assertMapEquals(values, FIRST_NAME_KEY, FIRST_NAME, LAST_NAME_KEY, LAST_NAME, AGE_KEY, AGE.toString());
     }
 
     @Test
     public void testOptional() throws Exception {
         person.setNickName(NICK_NAME);
         final Map<String, String[]> values = extractor.marshal(person);
-        assertThat(values.isEmpty(), is(false));
-        assertThat(values, hasEntry(FIRST_NAME_KEY, new String[] { FIRST_NAME }));
-        assertThat(values, hasEntry(LAST_NAME_KEY, new String[] { LAST_NAME }));
-        assertThat(values, hasEntry(AGE_KEY, new String[] { AGE.toString() }));
-        assertThat(values, hasEntry(NICK_NAME_KEY, new String[] { NICK_NAME }));
+        assertMapEquals(values, FIRST_NAME_KEY, FIRST_NAME, LAST_NAME_KEY, LAST_NAME, AGE_KEY, AGE.toString(),
+                NICK_NAME_KEY, NICK_NAME);
     }
 
     @Test
     public void testOptionalRecurse() throws Exception {
-        Assert.fail("TODO");
+        final Customer customer = new Customer();
+        customer.setPerson(person);
+
+        final Map<String, String[]> values = extractor.marshal(customer);
+
+        assertThat(values.isEmpty(), is(false));
+        assertMapEquals(values, FIRST_NAME_KEY, FIRST_NAME, LAST_NAME_KEY, LAST_NAME, AGE_KEY, AGE.toString());
     }
 
     @Test
@@ -133,12 +133,8 @@ public class StringArrayExtractorTest {
         final Map<String, String[]> values = extractor.marshal(customer);
 
         assertThat(values.isEmpty(), is(false));
-        assertThat(values, hasEntry(FIRST_NAME_KEY, new String[] { FIRST_NAME }));
-        assertThat(values, hasEntry(LAST_NAME_KEY, new String[] { LAST_NAME }));
-        assertThat(values, hasEntry(STREET_KEY, new String[] { STREET }));
-        assertThat(values, hasEntry(CITY_KEY, new String[] { CITY }));
-        assertThat(values, hasEntry(ZIP_KEY, new String[] { Integer.toString(ZIP) }));
-        assertThat(values, hasEntry(COUNTRY_CODE_KEY, new String[] { COUNTRY_CODE }));
+        assertMapEquals(values, FIRST_NAME_KEY, FIRST_NAME, LAST_NAME_KEY, LAST_NAME, AGE_KEY, AGE.toString(),
+                STREET_KEY, STREET, CITY_KEY, CITY, ZIP_KEY, Integer.toString(ZIP), COUNTRY_CODE_KEY, COUNTRY_CODE);
     }
 
     @Test
