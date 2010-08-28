@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.pcosta.vax.impl.exception.ValidationException;
 import org.pcosta.vax.testobject.Address;
 import org.pcosta.vax.testobject.CountryCode;
+import org.pcosta.vax.testobject.CountryInfo;
 import org.pcosta.vax.testobject.Customer;
 import org.pcosta.vax.testobject.Person;
 
@@ -66,6 +67,10 @@ public class StringArrayExtractorTest {
     private static final String NICK_NAME = "johnny";
 
     private static final String NICK_NAME_KEY = "nickName";
+
+    private static final String COUNTRY_NAME_KEY = "countryName";
+
+    private static final String HUNGARY = "Magyarország";
 
     private final StringArrayExtractor extractor = new StringArrayExtractor();
 
@@ -139,7 +144,12 @@ public class StringArrayExtractorTest {
 
     @Test
     public void testMultipleAdapters() throws Exception {
-        Assert.fail("TODO");
+        final CountryInfo info = new CountryInfo();
+        info.setCountryCode(CountryCode.HU);
+
+        final Map<String, String[]> values = extractor.marshal(info);
+        assertMapEquals(values, COUNTRY_CODE_KEY, COUNTRY_CODE, COUNTRY_NAME_KEY, HUNGARY);
+
     }
 
     @Test
