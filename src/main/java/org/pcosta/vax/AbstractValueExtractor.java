@@ -132,7 +132,7 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
     }
 
     @SuppressWarnings("rawtypes")
-    public synchronized void setValueAdapters(final Collection<ValueAdapter> valueAdapters) {
+    public synchronized void setValueAdapters(final Collection<? extends ValueAdapter> valueAdapters) {
         if (valueAdapters != null) {
             final Map<String, ValueAdapter> result = new HashMap<String, ValueAdapter>(valueAdapters.size());
             for (final ValueAdapter adapter : valueAdapters) {

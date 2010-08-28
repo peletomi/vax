@@ -16,6 +16,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.pcosta.vax.impl.util.MapUtil.assertMapEquals;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import junit.framework.Assert;
@@ -25,9 +26,12 @@ import org.junit.Test;
 import org.pcosta.vax.impl.exception.ValidationException;
 import org.pcosta.vax.testobject.Address;
 import org.pcosta.vax.testobject.CountryCode;
+import org.pcosta.vax.testobject.CountryCodeTranslationAdapter;
 import org.pcosta.vax.testobject.CountryInfo;
 import org.pcosta.vax.testobject.Customer;
 import org.pcosta.vax.testobject.Person;
+
+import com.google.common.collect.Lists;
 
 /**
  *
@@ -154,7 +158,18 @@ public class StringArrayExtractorTest {
 
     @Test
     public void testInjectedAdapters() throws Exception {
-        Assert.fail("TODO");
+        final Map<String, String> translations = new HashMap<String, String>();
+        translations.put(COUNTRY_CODE, HUNGARY.toUpperCase());
+
+        final CountryCodeTranslationAdapter adapter = new CountryCodeTranslationAdapter();
+        adapter.setTranslations(translations);
+
+        final CountryInfo info = new CountryInfo();
+        info.setCountryCode(CountryCode.HU);
+
+        extractor.setValueAdapters(Lists.newArrayList(adapter));
+        final Map<String, String[]> values = extractor.marshal(info);
+        assertMapEquals(values, COUNTRY_CODE_KEY, COUNTRY_CODE, COUNTRY_NAME_KEY, HUNGARY.toUpperCase());
     }
 
     @Test
