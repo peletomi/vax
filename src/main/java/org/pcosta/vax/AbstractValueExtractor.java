@@ -147,45 +147,78 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
             final ParsingContext currentContext, final Queue<ParsingContext> parsingContext,
             final ExtractorFrontEnd<Extracted> frontEnd, final AnnotatedElement element, final String name,
             final Object value) {
-        final Object adaptedValue = this.applyAdapters(ParsingDirection.MARSHALING, adapters, element, value);
 
-        final List<String> violations = this.validate(currentContext, name, element, adaptedValue);
+        final List<String> violations = new ArrayList<String>();
 
         if (violations.isEmpty()) {
-            if (this.doRecurse(element)) {
-                if (isCollection(adaptedValue)) {
-                    this.addToParsingContext(name, currentContext, parsingContext, adaptedValue);
+            if (isCollection(element, value)) {
+                if (this.doRecurse(element)) {
+                    this.addToParsingContext(keyGenerator, name, currentContext, parsingContext, value);
                 } else {
-                    parsingContext
-                    .offer(new ParsingContext(this.merge(currentContext.getAncestorKeys(), name), adaptedValue));
+                    violations.addAll(this.addToFrontEnd(keyGenerator, adapters, frontEnd, element, currentContext, name, value));
                 }
             } else {
-                frontEnd.addValue(this.merge(currentContext.getAncestorKeys(), name), adaptedValue);
+                final Object adaptedValue = this.applyAdapters(ParsingDirection.MARSHALING, adapters, element, value);
+                violations.addAll(this.validate(currentContext, name, element, adaptedValue));
+                if (this.doRecurse(element)) {
+                    parsingContext
+                    .offer(new ParsingContext(this.merge(currentContext.getAncestorKeys(), name), adaptedValue));
+                } else {
+                    frontEnd.addValue(this.merge(currentContext.getAncestorKeys(), name), adaptedValue);
+                }
             }
         }
 
         return violations;
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    private void addToParsingContext(final String name,
+    private List<String> addToFrontEnd(
+            final ValueKeyGenerator keyGenerator,
+            @SuppressWarnings("rawtypes") final Map<String, ValueAdapter> adapters,
+            final ExtractorFrontEnd<Extracted> frontEnd, final AnnotatedElement element,
+            final ParsingContext currentContext, final String name, final Object value) {
+
+        final List<String> violations = new ArrayList<String>();
+        final Collection<Object> instances = getCollectionFromValue(value);
+        if (instances != null) {
+            int i = 0;
+            for (final Object instance : instances) {
+                final Object adaptedValue = this.applyAdapters(ParsingDirection.MARSHALING, adapters, element, instance);
+                violations.addAll(this.validate(currentContext, name, element, adaptedValue));
+                frontEnd.addValue(this.merge(currentContext.getAncestorKeys(), keyGenerator.generateKey(name, i)), adaptedValue);
+                ++i;
+            }
+        }
+        return violations;
+    }
+
+    private void addToParsingContext(final ValueKeyGenerator keyGenerator, final String name,
             final ParsingContext currentContext, final Queue<ParsingContext> parsingContext, final Object value) {
+        if (value == null) {
+            return;
+        }
+
+        final Collection<Object> instances = getCollectionFromValue(value);
+        int i = 0;
+        for (final Object instance : instances) {
+            parsingContext
+                    .offer(new ParsingContext(this.merge(currentContext.getAncestorKeys(), keyGenerator.generateKey(name, i)),
+                            instance, true, i));
+            ++i;
+        }
+    }
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    private Collection<Object> getCollectionFromValue(final Object value) {
         Collection<Object> instances = null;
         if (value.getClass().isArray()) {
-            instances = Arrays.asList(value);
+            instances = Arrays.asList((Object[])value);
         } else if (value instanceof Collection) {
             instances = (Collection) value;
         } else {
             throw new IllegalArgumentException(String.format(UNEXP_TYPE_TEMPL, value.getClass().getName()));
         }
-        if (instances != null) {
-            int i = 0;
-            for (final Object instance : instances) {
-                parsingContext
-                        .offer(new ParsingContext(this.merge(currentContext.getAncestorKeys(), name), instance, true, i));
-                ++i;
-            }
-        }
+        return instances;
     }
 
     private String[] merge(final String[] source, final String string) {
@@ -199,8 +232,9 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
      *
      * @return
      */
-    private boolean isCollection(final Object value) {
-        return value != null && (value instanceof Collection || value.getClass().isArray());
+    private boolean isCollection(final AnnotatedElement element, final Object value) {
+        final Value annotation = element.getAnnotation(Value.class);
+        return value != null && annotation.collection() && (value instanceof Collection || value.getClass().isArray());
     }
 
     /**

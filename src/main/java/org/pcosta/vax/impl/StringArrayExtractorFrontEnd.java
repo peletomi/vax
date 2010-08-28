@@ -98,7 +98,7 @@ public class StringArrayExtractorFrontEnd implements ExtractorFrontEnd<Map<Strin
             final String[] keys = entry.getKey();
             String key;
             if (qualified) {
-                key = Joiner.on(keySeparator).join(keys, keySeparator);
+                key = Joiner.on(keySeparator).join(keys);
             } else {
                 key = keys[keys.length - 1];
             }

@@ -16,6 +16,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.pcosta.vax.impl.util.MapUtil.assertMapEquals;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,7 +30,9 @@ import org.pcosta.vax.testobject.CountryCode;
 import org.pcosta.vax.testobject.CountryCodeTranslationAdapter;
 import org.pcosta.vax.testobject.CountryInfo;
 import org.pcosta.vax.testobject.Customer;
+import org.pcosta.vax.testobject.GuestList;
 import org.pcosta.vax.testobject.Person;
+import org.pcosta.vax.testobject.TodoList;
 
 import com.google.common.collect.Lists;
 
@@ -81,6 +84,13 @@ public class StringArrayExtractorTest {
     private Person person;
 
     private Address address;
+
+    private static final ValueKeyGenerator GENERATOR = new ValueKeyGenerator() {
+        @Override
+        public String generateKey(final String key, final int position) {
+            return String.format("%s_%d", key, position);
+        }
+    };
 
     @Before
     public void setUp() throws Exception {
@@ -184,5 +194,30 @@ public class StringArrayExtractorTest {
             return;
         }
         Assert.fail("expecting exception");
+    }
+
+    @Test
+    public void testKeyGeneratorSimple() throws Exception {
+        extractor.setValueKeyGenerator(GENERATOR);
+
+        final GuestList guestList = new GuestList();
+        guestList.setVipNames(new String[] {"john", "bob" });
+        guestList.setGuests(Lists.newArrayList("paul", "bill"));
+
+        final Map<String, String[]> values = extractor.marshal(guestList);
+        assertMapEquals(values, "vipName_0" , "john", "vipName_1" , "bob", "guest_0" , "paul", "guest_1" , "bill");
+    }
+
+    @Test
+    public void testKeyGeneratorCompound() throws Exception {
+        extractor.setValueKeyGenerator(GENERATOR);
+
+        final TodoList list = new TodoList();
+        list.addItem("task1", new Date(), 1);
+        list.addItem("task2", new Date(), 3);
+        list.addItem("task3", new Date(), 5);
+
+        final Map<String, String[]> values = extractor.marshal(list);
+        assertMapEquals(values, COUNTRY_CODE_KEY, COUNTRY_CODE, COUNTRY_NAME_KEY, HUNGARY.toUpperCase());
     }
 }

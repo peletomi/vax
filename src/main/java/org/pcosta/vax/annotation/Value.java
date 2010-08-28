@@ -48,4 +48,9 @@ public @interface Value {
      */
     boolean recurse() default false;
 
+    /**
+     * If true and the value is a collection, then the items of the collection are extracted.
+     */
+    boolean collection() default false;
+
 }
