@@ -32,11 +32,13 @@ public final class MapUtil {
     }
 
     public static void assertMapEquals(final Map<String, String[]> actual, final Map<String, String[]> expected) {
-        if ( (actual == null && expected != null)
-                || (actual != null && expected == null) ) {
+        if (actual == null && expected == null) {
+            return;
+        }
+        if (actual == null || expected == null) {
             fail(String.format("both objects should be null expected [%s] actual [%s]", expected, actual));
         }
-        if ( actual.size() != expected.size()) {
+        if (actual.size() != expected.size()) {
             fail(String.format("sizes differ actual [%s] expected [%s]", toString(actual), toString(expected)));
         }
         for (final Entry<String, String[]> entry : expected.entrySet()) {

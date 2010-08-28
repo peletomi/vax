@@ -19,7 +19,6 @@ import static com.google.common.base.Predicates.or;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Lists.newArrayList;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -67,7 +66,6 @@ public class StringArrayExtractorFrontEnd implements ExtractorFrontEnd<Map<Strin
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public void addValue(final String[] key, final Object value) {
-        List<String> resultList = new ArrayList<String>();
         final Collection<Object> valueList;
         if (value != null && value.getClass().isArray()) {
             valueList = newArrayList((Object[]) value);
@@ -76,7 +74,7 @@ public class StringArrayExtractorFrontEnd implements ExtractorFrontEnd<Map<Strin
         } else {
             valueList = newArrayList(value);
         }
-        resultList = newArrayList(Collections2.transform(valueList, TO_STRING));
+        List<String> resultList = newArrayList(Collections2.transform(valueList, TO_STRING));
         if (skipBlanks) {
             resultList = newArrayList(filter(resultList, IS_NOT_BLANK));
         }
@@ -87,7 +85,7 @@ public class StringArrayExtractorFrontEnd implements ExtractorFrontEnd<Map<Strin
 
     @Override
     public boolean contains(final String[] key) {
-        return values.containsKey(Joiner.on(keySeparator).join(key, keySeparator));
+        return values.containsKey(key);
     }
 
     @Override
