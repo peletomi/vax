@@ -12,6 +12,13 @@
  */
 package org.pcosta.vax.impl;
 
+import static com.google.common.base.Predicates.equalTo;
+import static com.google.common.base.Predicates.isNull;
+import static com.google.common.base.Predicates.not;
+import static com.google.common.base.Predicates.or;
+import static com.google.common.collect.Iterables.filter;
+import static com.google.common.collect.Lists.newArrayList;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -23,7 +30,10 @@ import java.util.Map.Entry;
 import org.pcosta.vax.ExceptionHandler;
 import org.pcosta.vax.ExtractorFrontEnd;
 
+import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
 
 /**
  *
@@ -40,45 +50,38 @@ public class StringArrayExtractorFrontEnd implements ExtractorFrontEnd<Map<Strin
 
     private boolean qualified = false;
 
+    private static final Predicate<String> IS_NOT_BLANK = not(or(isNull(), equalTo("")));
+
+    private static final Function<Object, String> TO_STRING = new Function<Object, String>() {
+        @Override
+        public String apply(final Object from) {
+            return from == null ? null : from.toString();
+        }
+    };
+
     @Override
     public void init() {
         values = new HashMap<String[], String[]>();
     }
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public void addValue(final String[] key, final Object value) {
-        List<String> valueList = new ArrayList<String>();
-        if (value == null) {
-            valueList.add(null);
-        } else if (value.getClass().isArray()) {
-            final Object[] values = (Object[]) value;
-            for (int i = 0; i < values.length; i++) {
-                valueList.add(values[i] == null ? null : values[i].toString());
-            }
-        } else if (value instanceof Collection) {
-            @SuppressWarnings("rawtypes")
-            final Collection values = (Collection) value;
-            int i = 0;
-            for (final Object v : values) {
-                valueList.add(v == null ? null : v.toString());
-                ++i;
-            }
+        List<String> resultList = new ArrayList<String>();
+        final Collection<Object> valueList;
+        if (value != null && value.getClass().isArray()) {
+            valueList = newArrayList((Object[]) value);
+        } else if (value != null && value instanceof Collection) {
+            valueList = (Collection) value;
         } else {
-            valueList.add(value.toString());
+            valueList = newArrayList(value);
         }
+        resultList = newArrayList(Collections2.transform(valueList, TO_STRING));
         if (skipBlanks) {
-            final List<String> filtered = new ArrayList<String>();
-            for (final String string : valueList) {
-                if (!isBlank(string)) {
-                    filtered.add(string);
-                }
-            }
-            valueList = filtered;
-            if (!valueList.isEmpty()) {
-            }
+            resultList = newArrayList(filter(resultList, IS_NOT_BLANK));
         }
-        if ((skipBlanks && !valueList.isEmpty()) || !skipBlanks) {
-            values.put(key, valueList.toArray(new String[valueList.size()]));
+        if ((skipBlanks && !resultList.isEmpty()) || !skipBlanks) {
+            values.put(key, resultList.toArray(new String[resultList.size()]));
         }
     }
 
@@ -121,10 +124,6 @@ public class StringArrayExtractorFrontEnd implements ExtractorFrontEnd<Map<Strin
 
     public void setSkipBlanks(final boolean skipBlanks) {
         this.skipBlanks = skipBlanks;
-    }
-
-    protected boolean isBlank(final String value) {
-        return value == null || "".equals(value);
     }
 
     public boolean isQualified() {
