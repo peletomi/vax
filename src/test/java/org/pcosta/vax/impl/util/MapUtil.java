@@ -1,12 +1,13 @@
 package org.pcosta.vax.impl.util;
 
-import static org.hamcrest.collection.IsMapContaining.hasEntry;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import junit.framework.Assert;
 
 import com.google.common.base.Joiner;
 
@@ -39,11 +40,16 @@ public final class MapUtil {
             fail(String.format("sizes differ actual [%s] expected [%s]", toString(actual), toString(expected)));
         }
         for (final Entry<String, String[]> entry : expected.entrySet()) {
-                if (actual.containsKey(entry.getKey())) {
-                    assertThat(actual, hasEntry(entry.getKey(), entry.getValue()));
+                final String key = entry.getKey();
+                if (actual.containsKey(key)) {
+                    final String[] expectedValue = entry.getValue();
+                    Assert.assertTrue(
+                            String.format("expecting [%s] got [%s] for key [%s]",
+                                    Arrays.toString(expectedValue), Arrays.toString(actual.get(key)), key),
+                            Arrays.equals(actual.get(key), expectedValue));
                 } else {
                     fail(String.format("actual does not contain key [%s] actual [%s] expected [%s]",
-                            entry.getKey(), toString(actual), toString(expected)));
+                            key, toString(actual), toString(expected)));
                 }
         }
     }

@@ -24,9 +24,48 @@ import org.pcosta.vax.FrontEndFactory;
  */
 public class StringArrayExtractorFrontEndFactory implements FrontEndFactory<Map<String, String[]>> {
 
+    private String keySeparator;
+
+    private Boolean skipBlanks;
+
+    private Boolean qualified;
+
+    private StringArrayExtractorFrontEndFactory() {
+
+    }
+
+    public static StringArrayExtractorFrontEndFactory instance() {
+        return new StringArrayExtractorFrontEndFactory();
+    }
+
     @Override
     public ExtractorFrontEnd<Map<String, String[]>> create() {
-        return new StringArrayExtractorFrontEnd();
+        final StringArrayExtractorFrontEnd frontEnd = new StringArrayExtractorFrontEnd();
+        if (keySeparator != null) {
+            frontEnd.setKeySeparator(keySeparator);
+        }
+        if (skipBlanks != null) {
+            frontEnd.setSkipBlanks(skipBlanks);
+        }
+        if (qualified != null) {
+            frontEnd.setQualified(qualified);
+        }
+        return frontEnd;
+    }
+
+    public StringArrayExtractorFrontEndFactory keySeparator(final String keySeparator) {
+        this.keySeparator = keySeparator;
+        return this;
+    }
+
+    public StringArrayExtractorFrontEndFactory skipBlanks(final boolean skipBlanks) {
+        this.skipBlanks = skipBlanks;
+        return this;
+    }
+
+    public StringArrayExtractorFrontEndFactory qualified(final boolean qualified) {
+        this.qualified = qualified;
+        return this;
     }
 
 }

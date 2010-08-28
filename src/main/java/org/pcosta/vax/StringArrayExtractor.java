@@ -25,7 +25,7 @@ public class StringArrayExtractor extends
         AbstractValueExtractor<Map<String, String[]>, FrontEndFactory<Map<String, String[]>>> {
 
     public StringArrayExtractor() {
-        super(new StringArrayExtractorFrontEndFactory());
+        super(StringArrayExtractorFrontEndFactory.instance());
     }
 
 }

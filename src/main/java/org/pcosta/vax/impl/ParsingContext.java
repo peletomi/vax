@@ -12,6 +12,11 @@
  */
 package org.pcosta.vax.impl;
 
+import java.util.List;
+
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+
 /**
  *
  * @author Tamas.Eppel@gmail.com
@@ -19,7 +24,7 @@ package org.pcosta.vax.impl;
  */
 public class ParsingContext {
 
-    private final String[] ancestorKeys;
+    private final ImmutableList<String> ancestorKeys;
 
     private final Object instance;
 
@@ -29,25 +34,48 @@ public class ParsingContext {
 
     public ParsingContext(final Object instance) {
         this.instance = instance;
-        this.ancestorKeys = new String[0];
-        this.isPartOfCollection = false;
-        this.position = -1;
+        ancestorKeys = ImmutableList.of();
+        isPartOfCollection = false;
+        position = -1;
     }
 
-    public ParsingContext(final String[] ancestorKeys, final Object instance) {
+    public ParsingContext(final List<String> ancestorKeys, final Object instance) {
         this.instance = instance;
-        this.ancestorKeys = ancestorKeys;
-        this.isPartOfCollection = false;
-        this.position = -1;
+        this.ancestorKeys = ImmutableList.copyOf(ancestorKeys);
+        isPartOfCollection = false;
+        position = -1;
     }
 
-    public ParsingContext(final String[] ancestorKeys, final Object instance, final boolean isPartOfCollection,
+    public ParsingContext(final List<String> ancestorKeys, final Object instance, final boolean isPartOfCollection,
             final int position) {
         super();
         this.instance = instance;
-        this.ancestorKeys = ancestorKeys;
+        this.ancestorKeys = ImmutableList.copyOf(ancestorKeys);
         this.isPartOfCollection = isPartOfCollection;
         this.position = position;
+    }
+
+    public ParsingContext(
+            final ParsingContext oldContext, final String key, final Object instance, final boolean isPartOfCollection,
+            final int position) {
+        super();
+        this.instance = instance;
+        final List<String> keys = Lists.newArrayList(oldContext.getAncestorKeys());
+        keys.add(key);
+        ancestorKeys = ImmutableList.copyOf(keys);
+        this.isPartOfCollection = isPartOfCollection;
+        this.position = position;
+    }
+
+    public ParsingContext(
+            final ParsingContext oldContext, final String key, final Object instance) {
+        super();
+        this.instance = instance;
+        final List<String> keys = Lists.newArrayList(oldContext.getAncestorKeys());
+        keys.add(key);
+        ancestorKeys = ImmutableList.copyOf(keys);
+        isPartOfCollection = false;
+        position = -1;
     }
 
     /**
@@ -55,8 +83,8 @@ public class ParsingContext {
      *
      * @return
      */
-    public String[] getAncestorKeys() {
-        return this.ancestorKeys;
+    public ImmutableList<String> getAncestorKeys() {
+        return ancestorKeys;
     }
 
     /**
@@ -65,7 +93,7 @@ public class ParsingContext {
      * @return
      */
     public Object getInstance() {
-        return this.instance;
+        return instance;
     }
 
     /**
@@ -74,7 +102,7 @@ public class ParsingContext {
      * @return
      */
     public boolean isPartOfCollection() {
-        return this.isPartOfCollection;
+        return isPartOfCollection;
     }
 
     /**
@@ -84,6 +112,6 @@ public class ParsingContext {
      * @return
      */
     public int getPosition() {
-        return this.position;
+        return position;
     }
 }

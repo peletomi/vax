@@ -16,7 +16,6 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.pcosta.vax.impl.util.MapUtil.assertMapEquals;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,6 +23,7 @@ import junit.framework.Assert;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.pcosta.vax.impl.StringArrayExtractorFrontEndFactory;
 import org.pcosta.vax.impl.exception.ValidationException;
 import org.pcosta.vax.testobject.Address;
 import org.pcosta.vax.testobject.CountryCode;
@@ -211,13 +211,18 @@ public class StringArrayExtractorTest {
     @Test
     public void testKeyGeneratorCompound() throws Exception {
         extractor.setValueKeyGenerator(GENERATOR);
+        extractor.setFrontEndFactory(StringArrayExtractorFrontEndFactory.instance().qualified(true));
 
         final TodoList list = new TodoList();
-        list.addItem("task1", new Date(), 1);
-        list.addItem("task2", new Date(), 3);
-        list.addItem("task3", new Date(), 5);
+        list.addItem("task1", 1);
+        list.addItem("task2", 3);
+        list.addItem("task3", 5);
 
         final Map<String, String[]> values = extractor.marshal(list);
-        assertMapEquals(values, COUNTRY_CODE_KEY, COUNTRY_CODE, COUNTRY_NAME_KEY, HUNGARY.toUpperCase());
+        assertMapEquals(values,
+                "item_0.task", "task1", "item_0.priority", "1",
+                "item_1.task", "task2", "item_1.priority", "3",
+                "item_2.task", "task3", "item_2.priority", "5"
+                );
     }
 }
