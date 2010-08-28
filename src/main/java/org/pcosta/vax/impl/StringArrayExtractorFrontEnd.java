@@ -69,7 +69,7 @@ public class StringArrayExtractorFrontEnd implements ExtractorFrontEnd<Map<Strin
         final Collection<Object> valueList;
         if (value != null && value.getClass().isArray()) {
             valueList = newArrayList((Object[]) value);
-        } else if (value != null && value instanceof Collection) {
+        } else if (value instanceof Collection) {
             valueList = (Collection) value;
         } else {
             valueList = newArrayList(value);

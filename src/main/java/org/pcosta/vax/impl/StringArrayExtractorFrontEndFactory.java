@@ -22,7 +22,7 @@ import org.pcosta.vax.FrontEndFactory;
  * @author Tamas.Eppel@gmail.com
  *
  */
-public class StringArrayExtractorFrontEndFactory implements FrontEndFactory<Map<String, String[]>> {
+public final class StringArrayExtractorFrontEndFactory implements FrontEndFactory<Map<String, String[]>> {
 
     private String keySeparator;
 
