@@ -20,11 +20,8 @@ import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Lists.newArrayList;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.pcosta.vax.ExceptionHandler;
 import org.pcosta.vax.ExtractorFrontEnd;
@@ -33,6 +30,9 @@ import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 
 /**
  *
@@ -41,7 +41,7 @@ import com.google.common.collect.Collections2;
  */
 public class StringArrayExtractorFrontEnd implements ExtractorFrontEnd<Map<String, String[]>> {
 
-    private Map<String[], String[]> values = Collections.emptyMap();
+    private Multimap<String[], String> values;
 
     private String keySeparator = ".";
 
@@ -58,9 +58,20 @@ public class StringArrayExtractorFrontEnd implements ExtractorFrontEnd<Map<Strin
         }
     };
 
+    private static final Function<Collection<String>, String[]> TO_ARRAY = new Function<Collection<String>, String[]>() {
+        @Override
+        public String[] apply(final Collection<String> from) {
+            return from.toArray(new String[from.size()]);
+        }
+    };
+
+    StringArrayExtractorFrontEnd() {
+        // package protected so only the factory can create one
+    }
+
     @Override
     public void init() {
-        values = new HashMap<String[], String[]>();
+        values = HashMultimap.create();
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -79,7 +90,7 @@ public class StringArrayExtractorFrontEnd implements ExtractorFrontEnd<Map<Strin
             resultList = newArrayList(filter(resultList, IS_NOT_BLANK));
         }
         if ((skipBlanks && !resultList.isEmpty()) || !skipBlanks) {
-            values.put(key, resultList.toArray(new String[resultList.size()]));
+            values.putAll(key, resultList);
         }
     }
 
@@ -94,18 +105,17 @@ public class StringArrayExtractorFrontEnd implements ExtractorFrontEnd<Map<Strin
 
     @Override
     public Map<String, String[]> getExtracted() {
-        final Map<String, String[]> result = new HashMap<String, String[]>(values.size());
-        for (final Entry<String[], String[]> entry : values.entrySet()) {
-            final String[] keys = entry.getKey();
+        final Multimap<String, String> result = HashMultimap.create(values.size(), 5);
+        for (final String[] keys : values.keySet()) {
             String key;
             if (qualified) {
                 key = Joiner.on(keySeparator).join(keys);
             } else {
                 key = keys[keys.length - 1];
             }
-            result.put(key, entry.getValue());
+            result.putAll(key, values.get(keys));
         }
-        return result;
+        return Maps.transformValues(result.asMap(), TO_ARRAY);
     }
 
     public String getKeySeparator() {

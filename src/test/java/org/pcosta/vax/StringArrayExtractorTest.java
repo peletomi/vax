@@ -209,7 +209,7 @@ public class StringArrayExtractorTest {
     }
 
     @Test
-    public void testKeyGeneratorCompound() throws Exception {
+    public void testKeyGeneratorCompoundQualified() throws Exception {
         extractor.setValueKeyGenerator(GENERATOR);
         extractor.setFrontEndFactory(StringArrayExtractorFrontEndFactory.instance().qualified(true));
 
@@ -224,5 +224,20 @@ public class StringArrayExtractorTest {
                 "item_1.task", "task2", "item_1.priority", "3",
                 "item_2.task", "task3", "item_2.priority", "5"
                 );
+    }
+
+    @Test
+    public void testKeyGeneratorCompound() throws Exception {
+        final TodoList list = new TodoList();
+        list.addItem("task1", 1);
+        list.addItem("task2", 3);
+        list.addItem("task3", 5);
+
+        final Map<String, String[]> expected = new HashMap<String, String[]>();
+        expected.put("task", new String[] {"task1", "task2", "task3" });
+        expected.put("priority", new String[] {"3", "1", "5" });
+
+        final Map<String, String[]> values = extractor.marshal(list);
+        assertMapEquals(values, expected);
     }
 }
