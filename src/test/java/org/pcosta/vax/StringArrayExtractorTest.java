@@ -13,6 +13,7 @@
 package org.pcosta.vax;
 
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
 import static org.pcosta.vax.impl.util.MapUtil.assertMapEquals;
 
@@ -122,6 +123,9 @@ public class StringArrayExtractorTest {
     public void testMarshalPerson() throws Exception {
         final Map<String, String[]> values = extractor.marshal(person);
         assertMapEquals(values, FIRST_NAME_KEY, FIRST_NAME, LAST_NAME_KEY, LAST_NAME, AGE_KEY, AGE.toString());
+
+        final Person actual = extractor.unmarshal(Person.class, values);
+        assertThat(actual, equalTo(person));
     }
 
     @Test
@@ -235,7 +239,7 @@ public class StringArrayExtractorTest {
 
         final Map<String, String[]> expected = new HashMap<String, String[]>();
         expected.put("task", new String[] {"task1", "task2", "task3" });
-        expected.put("priority", new String[] {"3", "1", "5" });
+        expected.put("priority", new String[] {"1", "3", "5" });
 
         final Map<String, String[]> values = extractor.marshal(list);
         assertMapEquals(values, expected);

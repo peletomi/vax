@@ -19,20 +19,24 @@ import static com.google.common.base.Predicates.or;
 import static com.google.common.collect.Iterables.filter;
 import static com.google.common.collect.Lists.newArrayList;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
-import org.pcosta.vax.ExceptionHandler;
 import org.pcosta.vax.ExtractorFrontEnd;
 
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
+import com.google.common.base.Splitter;
 import com.google.common.collect.Collections2;
-import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
 
 /**
  *
@@ -41,7 +45,7 @@ import com.google.common.collect.Multimap;
  */
 public class StringArrayExtractorFrontEnd implements ExtractorFrontEnd<Map<String, String[]>> {
 
-    private Multimap<String[], String> values;
+    private Map<ImmutableList<String>, LinkedList<String>> values;
 
     private String keySeparator = ".";
 
@@ -71,7 +75,17 @@ public class StringArrayExtractorFrontEnd implements ExtractorFrontEnd<Map<Strin
 
     @Override
     public void init() {
-        values = HashMultimap.create();
+        values = new HashMap<ImmutableList<String>, LinkedList<String>>();
+    }
+
+    @Override
+    public void init(final Map<String, String[]> values) {
+        this.values = new HashMap<ImmutableList<String>, LinkedList<String>>();
+        for (final Entry<String, String[]> entry : values.entrySet()) {
+            final ImmutableList<String> keys = ImmutableList.copyOf(Splitter.on(getKeySeparator()).split(entry.getKey()));
+            add(this.values, keys, Arrays.asList(entry.getValue()));
+        }
+
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
@@ -90,7 +104,8 @@ public class StringArrayExtractorFrontEnd implements ExtractorFrontEnd<Map<Strin
             resultList = newArrayList(filter(resultList, IS_NOT_BLANK));
         }
         if ((skipBlanks && !resultList.isEmpty()) || !skipBlanks) {
-            values.putAll(key, resultList);
+            final ImmutableList<String> keys = ImmutableList.copyOf(key);
+            add(values, keys, resultList);
         }
     }
 
@@ -100,22 +115,21 @@ public class StringArrayExtractorFrontEnd implements ExtractorFrontEnd<Map<Strin
     }
 
     @Override
-    public void setExceptionHandler(final ExceptionHandler exceptionHandler) {
-    }
-
-    @Override
     public Map<String, String[]> getExtracted() {
-        final Multimap<String, String> result = HashMultimap.create(values.size(), 5);
-        for (final String[] keys : values.keySet()) {
+        final Map<String, LinkedList<String>> result = new HashMap<String, LinkedList<String>>();
+        for (final ImmutableList<String> keys : values.keySet()) {
             String key;
             if (qualified) {
                 key = Joiner.on(keySeparator).join(keys);
             } else {
-                key = keys[keys.length - 1];
+                key = Iterables.getLast(keys);
             }
-            result.putAll(key, values.get(keys));
+            if (!result.containsKey(key)) {
+                result.put(key, new LinkedList<String>());
+            }
+            result.put(key, values.get(keys));
         }
-        return Maps.transformValues(result.asMap(), TO_ARRAY);
+        return Maps.transformValues(result, TO_ARRAY);
     }
 
     public String getKeySeparator() {
@@ -141,4 +155,17 @@ public class StringArrayExtractorFrontEnd implements ExtractorFrontEnd<Map<Strin
     public void setQualified(final boolean qualified) {
         this.qualified = qualified;
     }
+
+    @Override
+    public Object get(final String[] keys) {
+        return values.get(ImmutableList.copyOf(keys));
+    }
+
+    private void add(final Map<ImmutableList<String>, LinkedList<String>> values, final ImmutableList<String> keys, final List<String> list) {
+        if (!values.containsKey(keys)) {
+            values.put(keys, new LinkedList<String>());
+        }
+        values.get(keys).addAll(list);
+    }
+
 }

@@ -12,6 +12,7 @@
  */
 package org.pcosta.vax;
 
+
 /**
  *
  * @author Tamas.Eppel@gmail.com
@@ -23,6 +24,11 @@ public interface ExtractorFrontEnd<Extracted> {
      * Initializes the internal container.
      */
     void init();
+
+    /**
+     * Initializes the internal container.
+     */
+    void init(Extracted values);
 
     /**
      * Adds a key value pair to the container.
@@ -40,11 +46,12 @@ public interface ExtractorFrontEnd<Extracted> {
     boolean contains(String[] key);
 
     /**
-     * Sets the exception handler.
+     * Returns the extracted value;
      *
-     * @param exceptionHandler
+     * @param keys
+     * @return
      */
-    void setExceptionHandler(ExceptionHandler exceptionHandler);
+    Object get(String[] keys);
 
     /**
      * Returns the extracted values stored in the internal container.

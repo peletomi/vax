@@ -21,12 +21,12 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import org.pcosta.vax.impl.DefaultExceptionHandler;
 import org.pcosta.vax.impl.DefaultValueKeyGenerator;
 import org.pcosta.vax.impl.IterableFields;
 import org.pcosta.vax.impl.IterableMethods;
 import org.pcosta.vax.impl.ParsingContext;
 import org.pcosta.vax.impl.exception.ValidationException;
+import org.pcosta.vax.impl.exception.VaxException;
 
 /**
  *
@@ -36,8 +36,6 @@ import org.pcosta.vax.impl.exception.ValidationException;
 public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEndFactory<Extracted>> {
 
     private Factory frontEndFactory;
-
-    private ExceptionHandler exceptionHandler = new DefaultExceptionHandler();
 
     private ValueKeyGenerator valueKeyGenerator = new DefaultValueKeyGenerator();
 
@@ -78,10 +76,10 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
         while (!parsingContext.isEmpty()) {
             final ParsingContext context = parsingContext.poll();
             for (final Field field : new IterableFields(context.getInstance())) {
-                marshaler.marshal(field, context);
+                marshaler.process(field, context);
             }
             for (final Method method : new IterableMethods(context.getInstance())) {
-                marshaler.marshal(method, context);
+                marshaler.process(method, context);
             }
         }
 
@@ -94,12 +92,49 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
         return frontEnd.getExtracted();
     }
 
-    public synchronized ExceptionHandler getExceptionHandler() {
-        return this.exceptionHandler;
+    public <T> T unmarshal(final Class<T> clazz, final Extracted values) {
+        T result = null;
+        try {
+            result = unmarshal(clazz.newInstance(), values);
+        } catch (final InstantiationException e) {
+            new VaxException(e);
+        } catch (final IllegalAccessException e) {
+            new VaxException(e);
+        }
+        return result;
     }
 
-    public synchronized void setExceptionHandler(final ExceptionHandler exceptionHandler) {
-        this.exceptionHandler = exceptionHandler;
+    public <T> T unmarshal(final T instance, final Extracted values) {
+        @SuppressWarnings("rawtypes")
+        final Map<String, ValueAdapter> adapters = this.getValueAdapterMap();
+        final ValueKeyGenerator keyGenerator = this.getValueKeyGenerator();
+
+        final ExtractorFrontEnd<Extracted> frontEnd = getFrontEndFactory().create();
+        frontEnd.init(values);
+
+        final Queue<ParsingContext> parsingContext = new ConcurrentLinkedQueue<ParsingContext>();
+        parsingContext.offer(new ParsingContext(instance));
+
+        final Unmarshaler<Extracted, FrontEndFactory<Extracted>> unmarshaler
+        = new Unmarshaler<Extracted, FrontEndFactory<Extracted>>(frontEnd, keyGenerator, adapters, parsingContext);
+
+        while (!parsingContext.isEmpty()) {
+            final ParsingContext context = parsingContext.poll();
+            for (final Field field : new IterableFields(context.getInstance())) {
+                unmarshaler.process(field, context);
+            }
+            for (final Method method : new IterableMethods(context.getInstance())) {
+                unmarshaler.process(method, context);
+            }
+        }
+
+        if (!unmarshaler.getViolations().isEmpty()) {
+            final ValidationException e = new ValidationException();
+            e.setViolations(unmarshaler.getViolations());
+            throw e;
+        }
+
+        return instance;
     }
 
     public synchronized ValueKeyGenerator getValueKeyGenerator() {

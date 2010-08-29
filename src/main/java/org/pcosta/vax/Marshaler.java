@@ -1,8 +1,5 @@
 package org.pcosta.vax;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -20,50 +17,18 @@ import org.pcosta.vax.impl.util.BeanUtils;
 
 import com.google.common.collect.ImmutableList;
 
-public class Marshaler<Extracted, Factory extends FrontEndFactory<Extracted>> {
+public final class Marshaler<Extracted, Factory extends FrontEndFactory<Extracted>>
+    extends AbstractMarshalUnmarshal<Extracted, Factory> {
 
     private static final String UNEXP_TYPE_TEMPL = "expected collection or array but was [%s]";
 
-    private final ExtractorFrontEnd<Extracted> frontEnd;
-
-    private final ValueKeyGenerator keyGenerator;
-
-    @SuppressWarnings("rawtypes")
-    private final Map<String, ValueAdapter> adapters;
-
-    private final List<String> violations = new ArrayList<String>();
-
-    private final Queue<ParsingContext> parsingContext;
-
-    private ParsingContext currentContext;
-
-    private AnnotatedElement element;
-
     public Marshaler(final ExtractorFrontEnd<Extracted> frontEnd, final ValueKeyGenerator keyGenerator,
-            @SuppressWarnings("rawtypes") final Map<String, ValueAdapter> adapters,
-            final Queue<ParsingContext> parsingContext) {
-        super();
-        this.frontEnd = frontEnd;
-        this.keyGenerator = keyGenerator;
-        this.adapters = adapters;
-        this.parsingContext = parsingContext;
+            @SuppressWarnings("rawtypes") final Map<String, ValueAdapter> adapters, final Queue<ParsingContext> parsingContext) {
+        super(frontEnd, keyGenerator, adapters, parsingContext);
     }
 
-    public void marshal(final AnnotatedElement element, final ParsingContext currentContext) {
-        clear();
-        checkNotNull(element);
-        checkNotNull(currentContext);
-        this.element = element;
-        this.currentContext = currentContext;
-        marshal();
-        clear();
-    }
-
-    public List<String> getViolations() {
-        return violations;
-    }
-
-    private void marshal() {
+    @Override
+    protected void process() {
         final String name = getName();
         final Object value = getValue(currentContext.getInstance());
 
@@ -82,18 +47,6 @@ public class Marshaler<Extracted, Factory extends FrontEndFactory<Extracted>> {
                 addToFrontEnd(name, adaptedValue);
             }
         }
-    }
-
-    private String getName() {
-        String name;
-        if (element instanceof Method) {
-            final Method method = (Method)element;
-            name = BeanUtils.getName(BeanUtils.getMethodName(method), method);
-        } else {
-            final Field field = (Field)element;
-            name = BeanUtils.getName(field.getName(), field);
-        }
-        return name;
     }
 
     private Object getValue(final Object instance) {
@@ -164,8 +117,4 @@ public class Marshaler<Extracted, Factory extends FrontEndFactory<Extracted>> {
         return instances;
     }
 
-    private void clear() {
-        currentContext = null;
-        element = null;
-    }
 }

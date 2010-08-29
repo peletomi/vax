@@ -102,9 +102,10 @@ public class BeanUtils {
         }
 
         final String name = getMethodName(method);
-        Method getter = null;
+        final Method getter = getGetter(method);
+        Method setter = null;
         try {
-            getter = method.getDeclaringClass().getMethod(addPrefix(GET, name));
+            setter = method.getDeclaringClass().getMethod(addPrefix(SET, name), getter.getReturnType());
         } catch (final SecurityException e) {
             LOG.warn(e.getMessage(), e);
             throw new IllegalStateException(String.format(SETTER_NOT_FOUND, method.getName()));
@@ -112,7 +113,7 @@ public class BeanUtils {
             LOG.warn(e.getMessage(), e);
             throw new IllegalStateException(String.format(SETTER_NOT_FOUND, method.getName()));
         }
-        return getter;
+        return setter;
     }
 
     public static Object getValue(final Object instance, final Field field) {
