@@ -29,6 +29,8 @@ import org.peletomi.vax.impl.exception.ValidationException;
 import org.peletomi.vax.impl.exception.VaxException;
 
 /**
+ * This class gets and sets values from and into the object instances. The front ends
+ * package this values in the respective return objects.
  *
  * @author Tamas.Eppel@gmail.com
  *
@@ -51,11 +53,14 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
     }
 
     /**
+     * Marshals the given object into the given front end.
      *
      * @param instance
      * @throws {@link IllegalArgumentException}
-     * @throws {@link VaxException}
+     * @throws {@link IllegalStateException}
      * @throws {@link AdapterException}
+     * @throws {@link ValidationException}
+     * @throws {@link VaxException}
      * @return
      */
     public Extracted marshal(final Object instance) {
@@ -92,6 +97,20 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
         return frontEnd.getExtracted();
     }
 
+    /**
+     * Unmarshals the values from the front end into the instance, which is
+     * created from the given class. All objects must have a no-arg constructor.
+     *
+     * @param <T>
+     * @param clazz
+     * @param values
+     * @throws {@link IllegalArgumentException}
+     * @throws {@link IllegalStateException}
+     * @throws {@link AdapterException}
+     * @throws {@link ValidationException}
+     * @throws {@link VaxException}
+     * @return
+     */
     public <T> T unmarshal(final Class<T> clazz, final Extracted values) {
         T result = null;
         try {
@@ -104,6 +123,20 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
         return result;
     }
 
+    /**
+     * Unmarshals the values from the front end into the instance.
+     * All objects must have a no-arg constructor.
+     *
+     * @param <T>
+     * @param clazz
+     * @param values
+     * @throws {@link IllegalArgumentException}
+     * @throws {@link IllegalStateException}
+     * @throws {@link AdapterException}
+     * @throws {@link ValidationException}
+     * @throws {@link VaxException}
+     * @return
+     */
     public <T> T unmarshal(final T instance, final Extracted values) {
         @SuppressWarnings("rawtypes")
         final Map<String, ValueAdapter> adapters = this.getValueAdapterMap();
