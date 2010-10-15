@@ -17,6 +17,8 @@ import org.peletomi.vax.annotation.Value;
 import org.peletomi.vax.annotation.ValueJavaAdapter;
 import org.peletomi.vax.impl.ParsingDirection;
 import org.peletomi.vax.impl.exception.AdapterException;
+import org.peletomi.vax.impl.exception.ValidationException;
+import org.peletomi.vax.impl.exception.VaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -204,6 +206,39 @@ public class BeanUtils {
         return result;
     }
 
+    public static void setValue(final Object instance, final AnnotatedElement element, final Object value) {
+        if (element instanceof Field) {
+            setFieldValue(instance, element, value);
+        } else {
+            setMethodValue(instance, element, value);
+        }
+    }
+
+    private static void setMethodValue(final Object instance, final AnnotatedElement element, final Object value) {
+        final Method setter = BeanUtils.getSetter((Method) element);
+        try {
+            setter.invoke(instance, value);
+        } catch (final IllegalAccessException e) {
+            throw new VaxException(e);
+        } catch (final InvocationTargetException e) {
+            throw new VaxException(e);
+        }
+    }
+
+    private static  void setFieldValue(final Object instance, final AnnotatedElement element, final Object value) {
+        final Field field = (Field) element;
+        final boolean accessible = field.isAccessible();
+        field.setAccessible(true);
+        try {
+            field.set(instance, value);
+        } catch (final IllegalArgumentException e) {
+            throw new VaxException(e);
+        } catch (final IllegalAccessException e) {
+            throw new VaxException(e);
+        }
+        field.setAccessible(accessible);
+    }
+
     static String addPrefix(final String prefix, final String string) {
         checkNotNull("prefix must not be null", prefix);
         checkNotNull("string must not be null", string);
@@ -242,4 +277,13 @@ public class BeanUtils {
         return adapterList;
     }
 
+    public static <T> T getInstance(final Class<T> clazz) {
+        try {
+            return clazz.newInstance();
+        } catch (final InstantiationException e) {
+            throw new ValidationException(e);
+        } catch (final IllegalAccessException e) {
+            throw new ValidationException(e);
+        }
+    }
 }

@@ -26,7 +26,7 @@ import org.peletomi.vax.impl.IterableFields;
 import org.peletomi.vax.impl.IterableMethods;
 import org.peletomi.vax.impl.ParsingContext;
 import org.peletomi.vax.impl.exception.ValidationException;
-import org.peletomi.vax.impl.exception.VaxException;
+import org.peletomi.vax.impl.util.BeanUtils;
 
 /**
  * This class gets and sets values from and into the object instances. The front ends
@@ -112,15 +112,7 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
      * @return
      */
     public <T> T unmarshal(final Class<T> clazz, final Extracted values) {
-        T result = null;
-        try {
-            result = unmarshal(clazz.newInstance(), values);
-        } catch (final InstantiationException e) {
-            new VaxException(e);
-        } catch (final IllegalAccessException e) {
-            new VaxException(e);
-        }
-        return result;
+        return unmarshal(BeanUtils.getInstance(clazz), values);
     }
 
     /**
@@ -159,6 +151,7 @@ public abstract class AbstractValueExtractor<Extracted, Factory extends FrontEnd
             for (final Method method : new IterableMethods(context.getInstance())) {
                 unmarshaler.process(method, context);
             }
+            unmarshaler.finished(context);
         }
 
         if (!unmarshaler.getViolations().isEmpty()) {

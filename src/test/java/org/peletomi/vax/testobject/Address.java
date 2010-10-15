@@ -95,4 +95,9 @@ public class Address {
         }
         return true;
     }
+
+    @Override
+    public String toString() {
+        return "Address [street=" + street + ", city=" + city + ", zip=" + zip + ", country=" + country + "]";
+    }
 }

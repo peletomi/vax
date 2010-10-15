@@ -134,6 +134,9 @@ public class StringArrayExtractorTest {
         final Map<String, String[]> values = extractor.marshal(person);
         assertMapEquals(values, FIRST_NAME_KEY, FIRST_NAME, LAST_NAME_KEY, LAST_NAME, AGE_KEY, AGE.toString(),
                 NICK_NAME_KEY, NICK_NAME);
+
+        final Person actual = extractor.unmarshal(Person.class, values);
+        assertThat(actual, equalTo(person));
     }
 
     @Test
@@ -145,6 +148,9 @@ public class StringArrayExtractorTest {
 
         assertThat(values.isEmpty(), is(false));
         assertMapEquals(values, FIRST_NAME_KEY, FIRST_NAME, LAST_NAME_KEY, LAST_NAME, AGE_KEY, AGE.toString());
+
+        final Customer actual = extractor.unmarshal(Customer.class, values);
+        assertThat(actual, equalTo(customer));
     }
 
     @Test

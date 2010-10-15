@@ -42,7 +42,7 @@ public final class Marshaler<Extracted, Factory extends FrontEndFactory<Extracte
             final Object adaptedValue = BeanUtils.applyAdapters(ParsingDirection.MARSHALING, adapters, element, value);
             violations.addAll(validate(name, adaptedValue));
             if (BeanUtils.doRecurse(element)) {
-                parsingContext.offer(new ParsingContext(currentContext, name, adaptedValue));
+                parsingContext.offer(new ParsingContext(currentContext, element, name, adaptedValue));
             } else {
                 addToFrontEnd(name, adaptedValue);
             }
@@ -99,7 +99,7 @@ public final class Marshaler<Extracted, Factory extends FrontEndFactory<Extracte
         final Collection<Object> instances = getCollectionFromValue(value);
         int i = 0;
         for (final Object instance : instances) {
-            parsingContext.offer(new ParsingContext(currentContext, keyGenerator.generateKey(name, i), instance, true, i));
+            parsingContext.offer(new ParsingContext(currentContext, element, keyGenerator.generateKey(name, i), instance, true, i));
             ++i;
         }
     }

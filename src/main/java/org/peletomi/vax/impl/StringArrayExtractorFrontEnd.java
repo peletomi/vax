@@ -160,7 +160,13 @@ public class StringArrayExtractorFrontEnd implements ExtractorFrontEnd<Map<Strin
 
     @Override
     public Object get(final String[] keys) {
-        return values.get(ImmutableList.copyOf(keys));
+        Object value;
+        if (qualified) {
+            value = values.get(ImmutableList.copyOf(keys));
+        } else {
+            value = values.get(ImmutableList.copyOf(Arrays.copyOfRange(keys, keys.length - 1, keys.length)));
+        }
+        return value;
     }
 
     private void add(final Map<ImmutableList<String>, LinkedList<String>> values, final ImmutableList<String> keys, final List<String> list) {

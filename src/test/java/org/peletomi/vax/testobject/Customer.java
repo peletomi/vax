@@ -63,4 +63,9 @@ public class Customer {
         }
         return true;
     }
+
+    @Override
+    public String toString() {
+        return "Customer [person=" + person + ", address=" + address + "]";
+    }
 }
