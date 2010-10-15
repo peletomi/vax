@@ -250,4 +250,15 @@ public class StringArrayExtractorTest {
         final Map<String, String[]> values = extractor.marshal(list);
         assertMapEquals(values, expected);
     }
+
+    @Test
+    public void testUnmarshallingWithMissingRequiredFields() throws Exception {
+        try {
+            extractor.unmarshal(Person.class, new HashMap<String, String[]>());
+        } catch (final ValidationException e) {
+            assertThat(e.getViolations().size(), is(3));
+            return;
+        }
+        Assert.fail("expecting exception");
+    }
 }
