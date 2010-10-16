@@ -113,7 +113,7 @@ public class StringArrayExtractorFrontEnd implements ExtractorFrontEnd<Map<Strin
 
     @Override
     public boolean contains(final String[] key) {
-        return values.containsKey(key);
+        return values.containsKey(ImmutableList.copyOf(key));
     }
 
     @Override
