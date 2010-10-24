@@ -5,17 +5,14 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
-import org.peletomi.vax.annotation.Value;
 import org.peletomi.vax.impl.ParsingContext;
 import org.peletomi.vax.impl.ParsingDirection;
 import org.peletomi.vax.impl.util.BeanUtils;
 
-import com.google.common.collect.ImmutableList;
 
 public final class Marshaler<Extracted, Factory extends FrontEndFactory<Extracted>>
     extends AbstractMarshalUnmarshal<Extracted, Factory> {
@@ -59,17 +56,6 @@ public final class Marshaler<Extracted, Factory extends FrontEndFactory<Extracte
             value = BeanUtils.getValue(instance, field);
         }
         return value;
-    }
-
-    private List<String> validate(final String name, final Object value) {
-        List<String> result = Collections.emptyList();
-        final Value annotation = element.getAnnotation(Value.class);
-        if (annotation.required() && (value == null || "".equals(value.toString()))) {
-            result = ImmutableList.copyOf(
-                      new String[] {String.format("value [%s] required but not set in class [%s]",
-                              name, currentContext.getInstance().getClass().getName()) });
-        }
-        return result;
     }
 
     private void addToFrontEnd(final String name, final Object value) {

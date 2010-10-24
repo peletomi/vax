@@ -26,6 +26,7 @@ public final class Unmarshaler<Extracted, Factory extends FrontEndFactory<Extrac
     protected void process() {
         final Class<?> type = getType();
         final Object value = getValue(type);
+        violations.addAll(validate(getName(), value));
         if (value != null) {
             setValue(value);
             currentContext.incrementNonNullCount();

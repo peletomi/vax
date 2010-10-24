@@ -28,23 +28,17 @@ public @interface Value {
 
     /**
      * Returns the name of the field.
-     *
-     * @return
      */
     String name() default "";
 
     /**
      * Is this a required field?
-     *
-     * @return
      */
     boolean required() default true;
 
     /**
      * If this property is true, then the values from the attribute object are
      * extracted as well.
-     *
-     * @return
      */
     boolean recurse() default false;
 
@@ -52,5 +46,10 @@ public @interface Value {
      * If true and the value is a collection, then the items of the collection are extracted.
      */
     boolean collection() default false;
+
+    /**
+     * Class of the collection items.
+     */
+    Class<?> collectionClass() default DefaultClass.class;
 
 }
